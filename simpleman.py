@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import tkinter as tk
 import tkinter.scrolledtext as st
-from tkinter import IntVar, Tk, Frame, Label, Button, Checkbutton, Entry, Canvas, Scrollbar, Text, ttk, Listbox
+from tkinter import IntVar, Tk, Frame, Label, LabelFrame, Button, Checkbutton, Entry, Canvas, Scrollbar, Text, ttk, Listbox
 
 # SET UP WINDOW
 root = Tk()
@@ -44,19 +44,6 @@ class HoverButton(tk.Button):
         self['background'] = self.defaultBackground
 
 # FUNCTIONS
-def load():
-    global df
-    df = pd.read_csv("test_df.csv", index_col ="index")
-    df = df.astype({"id": int, 
-                    "game_num": int, 
-                    "word": str, 
-                    "game_name": str, 
-                    "game_description": str,
-                    "stemmed_word": str,
-                    "changed_word": str, 
-                    "remark": str, 
-                    "std_word": str,
-                    "std2": str})
 
 def prev_row():
     global currentRow
@@ -198,10 +185,16 @@ def on_enter(event):
     global end_pos
     descriptions_list = []
     target = getattr(event.widget, "changed_word", "")
-    search_term = searchInput.get()
-    for i in range(len(df['game_description'][df['changed_word'].str.match(str(target))])):
-        descriptions_list.append(str(df['game_description'][df['changed_word'].str.match(str(target))].iloc[i]))
+    print("the word you hovered over is: %s" % target)
+    target =  target.split("_")[0]
+    print("here is the first term without the underscore: %s" % target)
+
+    # search_term = searchInput.get()
+    search_term = target
+    for i in range(len(df['game_description'][df['changed_word'].str.contains(str(target))])):
+        descriptions_list.append(str(df['game_description'][df['changed_word'].str.contains(str(target))].iloc[i]))
         descriptions_list.append("\n\n\n\n")
+
     gameDescTxt.delete('1.0', tk.END)
     gameDescTxt.insert(1.0, descriptions_list, 'warning')
     start_pos = gameDescTxt.search(search_term, '1.0', stopindex=tk.END)
@@ -217,7 +210,7 @@ def on_enter(event):
         end_pos = '{}+{}c'.format(start_pos, len(search_term))            
         gameDescTxt.tag_add('highlight', start_pos, end_pos)
         gameDescTxt.tag_config('highlight', background='yellow', foreground = "black")
-    for i in range(len(df['game_description'][df['changed_word'].str.match(str(target))])):
+    for i in range(len(df['game_description'][df['changed_word'].str.contains(str(target))])):
         start_pos = gameDescTxt.search(search_term, end_pos, stopindex=tk.END)
         if start_pos:
             if end_pos:
@@ -228,6 +221,21 @@ def on_enter(event):
 
 def on_leave(event):
     pass
+
+def onselect(evt):
+    # Note here that Tkinter passes an event object to onselect()
+    w = evt.widget
+    index = int(w.curselection()[0])
+    value = w.get(index)
+    print('You selected item %d: "%s"' % (index, value))
+    associated_words_df = df['changed_word'][df['std_word'] == '%s' % (value)].unique()
+    associated_words = []
+    for i in range(len(associated_words_df)):
+        associated_words.append(associated_words_df[i])
+    print(associated_words)
+    backMatchBox.delete('1.0', tk.END)
+    for i in range(len(associated_words)):
+        backMatchBox.insert(1.0, "%s \n" % (associated_words[i]))
 
 def add_to_cart():
     global cartList
@@ -281,18 +289,16 @@ def update_std_words():
 
 def set_std():
     newStdWord = stdListBox.get(tk.ACTIVE)
-    newStd2Word = specInput.get()
-    for cartWord in cartList:
-        df['std_word'][df['changed_word'].str.match(cartWord)] = newStdWord
-        df['std2'][df['changed_word'].str.match(cartWord)] = newStd2Word
+    for cartWord in sorted(cartList):
+        # df['std_word'][df['changed_word'].str.match(cartWord)] = newStdWord
+        df['std_word'][df['changed_word'] == cartWord] = newStdWord
     update_std_words()
 
 def new_std_word():
     newStdWord = newStdInput.get()
-    newStd2Word = specInput.get()
     for cartWord in cartList:
-        df['std_word'][df['changed_word'].str.match(cartWord)] = newStdWord
-        df['std2'][df['changed_word'].str.match(cartWord)] = newStd2Word
+        # df['std_word'][df['changed_word'].str.match(cartWord)] = newStdWord
+        df['std_word'][df['changed_word'] == cartWord] = newStdWord
     update_std_words()
 
 def select_all_search():
@@ -315,17 +321,33 @@ def data_output():
     df.to_csv('data_output.csv', index=True, index_label="index")
 
 def save_file():
-    df.to_csv('C:/Users/gaoan/Code/Freebird/{}.csv'.format(saveFileInput.get()), index=True, index_label="index")
+    df.to_csv('{}.csv'.format(saveFileInput.get()), index=True, index_label="index")
 
-###################################################################################################
-###################################################################################################
-###################################################################################################
-###################################################################################################
-###################################################################################################
-###################################################################################################
-###################################################################################################
-###################################################################################################
-###################################################################################################
+def load_file():
+    global df
+    df = pd.read_csv("{}.csv".format(loadFileInput.get()), index_col ="index")
+    df = df.astype({"id": int, 
+                    "game_num": int, 
+                    "word": str, 
+                    "game_name": str, 
+                    "game_description": str,
+                    "stemmed_word": str,
+                    "changed_word": str, 
+                    "remark": str, 
+                    "std_word": str})
+
+    update_info()
+    update_std_words()
+
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
 
 # SET WINDOW SIZE
 rootWidth = 1800
@@ -334,18 +356,21 @@ root.geometry('{}x{}+25+25'.format(rootWidth, rootHeight))
 root.resizable(width=False, height=False)
 
 # SET FRAME DIMENSIONS
-frame1 = Frame(root, width=450, height=1000)
+frame1 = Frame(root, width=360, height=1000)
 frame1.place(x=0,y=0)
-frame1.config(bg="grey22")
-frame2 = Frame(root, width=450, height=1000)
-frame2.place(x=450,y=0)
-frame2.config(bg="grey44")
-frame3 = Frame(root, width=450, height=1000)
-frame3.place(x=900,y=0)
-frame3.config(bg="grey66")
-frame4 = Frame(root, width=450, height=1000)
-frame4.place(x=1350,y=0)
-frame4.config(bg="grey88")
+frame1.config(bg="grey11")
+frame2 = Frame(root, width=360, height=1000)
+frame2.place(x=360,y=0)
+frame2.config(bg="grey22")
+frame3 = Frame(root, width=360, height=1000)
+frame3.place(x=720,y=0)
+frame3.config(bg="grey44")
+frame4 = Frame(root, width=360, height=1000)
+frame4.place(x=1080,y=0)
+frame4.config(bg="grey66")
+frame5 = Frame(root, width=360, height=1000)
+frame5.place(x=1440,y=0)
+frame5.config(bg="grey88")
 
 # FRAME 1
 numTitle = Label(frame1, text="Game number:")
@@ -384,50 +409,44 @@ gameDescTitle.configure(background = "black", foreground="white")
 gameDescInfo = Label(frame1, text="")
 gameDescInfo.place(x=10, y=130)
 gameDescInfo.configure(background = "black", foreground="white")
-gameDescTxt = st.ScrolledText(frame1, undo=True, width=50, height=40, wrap="word", bg = "black", fg = "white")
+gameDescTxt = st.ScrolledText(frame1, undo=True, width=40, height=50, wrap="word", bg = "black", fg = "white")
 gameDescTxt.place(x=10, y=160)
-gameDescTxt.insert(1.0, "DESCRIPTION GOES HERE..")
-saveFileBtn = HoverButton(frame1, text="Save", command=save_file, padx=2, pady=2)
-saveFileBtn.place(x=10,y=940)
-saveFileBtn.configure(background = "black", foreground="white")
-saveFileInput = Entry(frame1, width=42, justify = "left", font=('Consolas', 10, 'bold'))
-saveFileInput.place(x=75,y=942)
+gameDescTxt.insert(1.0, "LOAD A FILE..")
 
 # FRAME 2
 searchBtn = HoverButton(frame2, text="Search", command=search_word, padx=2, pady=2)
 searchBtn.place(x=10,y=40)
 searchBtn.configure(background = "black", foreground="white")
-searchInput = Entry(frame2, width=42, justify = "left", font=('Consolas', 10, 'bold'))
+searchInput = Entry(frame2, width=32, justify = "left", font=('Consolas', 10, 'bold'))
 searchInput.place(x=75,y=42)
 addCartBtn = HoverButton(frame2, text="Add", command=add_to_cart, padx=2, pady=2)
 addCartBtn.place(x=10,y=120)
 addCartBtn.configure(background = "black", foreground="white")
 selectAllSearchBtn = HoverButton(frame2, text="Select All", command=select_all_search, padx=2, pady=2)
-selectAllSearchBtn.place(x=275,y=120)
+selectAllSearchBtn.place(x=175,y=120)
 selectAllSearchBtn.configure(background = "black", foreground="white")
 deselectAllSearchBtn = HoverButton(frame2, text="Deselect All", command=deselect_all_search, padx=2, pady=2)
-deselectAllSearchBtn.place(x=350,y=120)
+deselectAllSearchBtn.place(x=250,y=120)
 deselectAllSearchBtn.configure(background = "black", foreground="white")
-searchCanvas = Canvas(frame2, bg='black', width=420, height=800)
+searchCanvas = Canvas(frame2, bg='black', width=340, height=800)
 searchCanvas.place(x=10,y=160)
-searchListBox = st.ScrolledText(searchCanvas, width=50, height=50, wrap="none")
+searchListBox = st.ScrolledText(searchCanvas, width=40, height=50, wrap="none")
 searchListBox.configure(background = "black")
 searchListBox.pack() 
 
 # FRAME 3
-
 removeCartBtn = HoverButton(frame3, text="Remove", command=remove_from_cart, padx=2, pady=2)
 removeCartBtn.place(x=10,y=120)
 removeCartBtn.configure(background = "black", foreground="white")
 selectAllSearchBtn = HoverButton(frame3, text="Select All", command=select_all_cart, padx=2, pady=2)
-selectAllSearchBtn.place(x=275,y=120)
+selectAllSearchBtn.place(x=175,y=120)
 selectAllSearchBtn.configure(background = "black", foreground="white")
 deselectAllSearchBtn = HoverButton(frame3, text="Deselect All", command=deselect_all_cart, padx=2, pady=2)
-deselectAllSearchBtn.place(x=350,y=120)
+deselectAllSearchBtn.place(x=250,y=120)
 deselectAllSearchBtn.configure(background = "black", foreground="white")
-cartCanvas = Canvas(frame3, bg='black', width=420, height=800)
+cartCanvas = Canvas(frame3, bg='black', width=340, height=800)
 cartCanvas.place(x=10, y=160)
-cartListBox = st.ScrolledText(cartCanvas, width=50, height=50, wrap="none")
+cartListBox = st.ScrolledText(cartCanvas, width=40, height=50, wrap="none")
 cartListBox.configure(background = "black")
 cartListBox.pack() 
 
@@ -435,34 +454,45 @@ cartListBox.pack()
 newStdBtn = HoverButton(frame4, text="New", command=new_std_word, padx=2, pady=2)
 newStdBtn.place(x=10,y=40)
 newStdBtn.configure(background = "black", foreground="white")
-newStdInput = Entry(frame4, width=42, justify = "left", font=('Consolas', 10, 'bold'))
+newStdInput = Entry(frame4, width=36, justify = "left", font=('Consolas', 10, 'bold'))
 newStdInput.place(x=75,y=42)
 
 stdSetBtn = HoverButton(frame4, text="Existing", command=set_std, padx=2, pady=2)
 stdSetBtn.place(x=10, y=80)
 stdSetBtn.configure(background = "black", foreground="white")
 
-specLabel = Label(frame4, text="Specify", padx=4, pady=4)
-specLabel.place(x=10,y=120)
-specLabel.configure(background = "black", foreground="white")
-specInput = Entry(frame4, width=42, justify = "left", font=('Consolas', 10, 'bold'))
-specInput.place(x=75,y=120)
-
-stdCanvas = Canvas(frame4, bg='green', width=420, height=900)
+stdCanvas = Canvas(frame4, bg='green', width=340, height=900)
 stdCanvas.place(x=10,y=160)
 
 stdScrollbar = Scrollbar(stdCanvas, orient="vertical")
 stdScrollbar.pack(side="right", fill="y")
-stdListBox = Listbox(stdCanvas, width=56, height=50, background = "black", foreground="white", font = ('Consolas', 10, 'bold'))
+stdListBox = Listbox(stdCanvas, width=45, height=50, background = "black", foreground="white", font = ('Consolas', 10, 'bold'))
 stdListBox.pack()
-stdListBox.insert(tk.END, "std words go here")
+stdListBox.insert(tk.END, "LIST OF STANDARDIZED WORDS..")
 stdListBox.configure(yscrollcommand=stdScrollbar.set)
 stdScrollbar.config(command=stdListBox.yview)
 
-# EXECUTE ON STARTUP
-load()
-update_info()
-update_std_words()
+#bind event to std listbox so words show in frame 5
+stdListBox.bind('<<ListboxSelect>>', onselect)
+
+#FRAME 5
+backMatchCanvas = LabelFrame(frame5, text='Words already standardized w/ selected', bg='grey88', width=350, height=835)
+backMatchCanvas.place(x=5,y=25)
+backMatchBox = st.ScrolledText(backMatchCanvas, width=38, height=50, wrap="none")
+backMatchBox.configure(background = "black", foreground="white", font=('Consolas', 10, 'bold'))
+backMatchBox.place(x=5,y=5)
+
+loadFileBtn = HoverButton(frame5, text="Load", command=load_file, padx=2, pady=2)
+loadFileBtn.place(x=10,y=880)
+loadFileBtn.configure(background = "black", foreground="white")
+loadFileInput = Entry(frame5, width=28, justify = "left", font=('Consolas', 10, 'bold'))
+loadFileInput.place(x=75,y=880)
+
+saveFileBtn = HoverButton(frame5, text="Save", command=save_file, padx=2, pady=2)
+saveFileBtn.place(x=10,y=920)
+saveFileBtn.configure(background = "black", foreground="white")
+saveFileInput = Entry(frame5, width=32, justify = "left", font=('Consolas', 10, 'bold'))
+saveFileInput.place(x=75,y=920)
 
 # MAIN LOOP
 root.mainloop()
