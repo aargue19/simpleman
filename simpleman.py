@@ -62,6 +62,7 @@ def prev_row():
     destroy_info()
     update_info()
     update_std_words()
+    search_word()
 
 def next_row():
     global currentRow
@@ -80,6 +81,7 @@ def next_row():
     destroy_info()
     update_info()
     update_std_words()
+    search_word()
 
 def destroy_info():
     global numInfo
@@ -92,12 +94,16 @@ def destroy_info():
     global cartListBox
     global searchCanvas
     global searchListBox
+    global newStdInput
     numInfo.destroy()
     idInfo.destroy()
     wordInfo.destroy()
     gameDescInfo.destroy()
     gameDescTxt.delete('1.0', tk.END)
     searchInput.delete(0, 'end')
+    newStdInput.delete(0, tk.END) #deletes the current value
+    deselect_all_search()
+    deselect_all_cart()
 
 def update_info():
     global numInfo
@@ -106,6 +112,7 @@ def update_info():
     global gameDescInfo
     global gameDescTxt
     global searchInput
+    global newStdInput
     numInfo = Label(frame1, text=df.iloc[currentRow].game_num)
     numInfo.place(x=10, y=35)
     numInfo.configure(background = "black", foreground="white")
@@ -120,6 +127,7 @@ def update_info():
     gameDescInfo.configure(background = "black", foreground="white")
     gameDescTxt.insert(1.0, "{}".format(df.iloc[currentRow].game_description))
     searchInput.insert(0, df.iloc[currentRow].changed_word)
+    newStdInput.insert(0, df.iloc[currentRow].changed_word) #inserts new value assigned by 2nd parameter
     highlight_word()
 
 def highlight_word():
@@ -154,7 +162,7 @@ def search_word():
     search_term = searchInput.get()
     searchCanvas = Canvas(frame2, bg='black', width=420, height=800)
     searchCanvas.place(x=10,y=160)
-    searchListBox = st.ScrolledText(searchCanvas, width=50, height=50, wrap="none")
+    searchListBox = st.ScrolledText(searchCanvas, width=40, height=50, wrap="none")
     searchListBox.configure(background = "black")
     searchListBox.pack() 
     wantSkip = skipVar.get()
@@ -168,16 +176,23 @@ def search_word():
     checkBoxList = []
     checkBoxes = []
     labelList = []
+    hoverList = []
     for i in range(len(matchList)):
         labelList.append(Label(searchListBox, text=matchList[i]))
         labelList[i].changed_word = matchList[i]
         labelList[i].config(background = "black", foreground= 'white', font = ('Consolas', 10, 'bold'))
-        labelList[i].bind("<Enter>", on_enter)
-        labelList[i].bind("<Leave>", on_leave)
+        # labelList[i].bind("<Enter>", on_enter)
+        # labelList[i].bind("<Leave>", on_leave)
         checkBoxList.append(IntVar())
         checkBoxes.append(Checkbutton(searchListBox, text='', variable=checkBoxList[i], selectcolor="grey88", background='black'))
+        hoverList.append(Label(searchListBox, text="HOVER OVER TO SEE DESCRIPTIONS"))
+        hoverList[i].changed_word = matchList[i]
+        hoverList[i].config(background = "black", foreground= 'black', font = ('Consolas', 10, 'bold'))
+        hoverList[i].bind("<Enter>", on_enter)
+        hoverList[i].bind("<Leave>", on_leave)
         searchListBox.window_create("end", window=checkBoxes[i])
         searchListBox.window_create("end", window=labelList[i])
+        searchListBox.window_create("end", window=hoverList[i])
         searchListBox.insert("end", "\n")
 
 def on_enter(event):
@@ -185,12 +200,12 @@ def on_enter(event):
     global end_pos
     descriptions_list = []
     target = getattr(event.widget, "changed_word", "")
-    print("the word you hovered over is: %s" % target)
-    target =  target.split("_")[0]
-    print("here is the first term without the underscore: %s" % target)
+    print(target)
+    target_first_word =  target.split("_")[0]
+    print(target_first_word)
 
     # search_term = searchInput.get()
-    search_term = target
+    search_term = target_first_word
     for i in range(len(df['game_description'][df['changed_word'].str.contains(str(target))])):
         descriptions_list.append(str(df['game_description'][df['changed_word'].str.contains(str(target))].iloc[i]))
         descriptions_list.append("\n\n\n\n")
@@ -252,7 +267,7 @@ def update_cart():
     global cartCheckBoxes
     cartCanvas = Canvas(frame3, bg='black', width=420, height=800)
     cartCanvas.place(x=10,y=160)
-    cartListBox = st.ScrolledText(cartCanvas, width=50, height=50, wrap="none")
+    cartListBox = st.ScrolledText(cartCanvas, width=40, height=50, wrap="none")
     cartListBox.configure(background = "black")
     cartListBox.pack()
     cartCheckBoxList = []
@@ -287,12 +302,15 @@ def update_std_words():
         stdListBox.insert(tk.END, item)
     data_output()
 
-def set_std():
+def set_std():   
     newStdWord = stdListBox.get(tk.ACTIVE)
     for cartWord in sorted(cartList):
         # df['std_word'][df['changed_word'].str.match(cartWord)] = newStdWord
         df['std_word'][df['changed_word'] == cartWord] = newStdWord
     update_std_words()
+    select_all_cart()
+    remove_from_cart()
+    update_cart()
 
 def new_std_word():
     newStdWord = newStdInput.get()
@@ -300,6 +318,9 @@ def new_std_word():
         # df['std_word'][df['changed_word'].str.match(cartWord)] = newStdWord
         df['std_word'][df['changed_word'] == cartWord] = newStdWord
     update_std_words()
+    select_all_cart()
+    remove_from_cart()
+    update_cart()
 
 def select_all_search():
     for x in checkBoxes:
