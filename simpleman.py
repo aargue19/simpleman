@@ -25,8 +25,12 @@ global gameDescTxt
 global searchInput
 global searchCanvas
 global searchListBox
+global checkBoxes
+checkBoxes = []
 global cartCanvas
 global cartListBox
+global cartCheckBoxes
+cartCheckBoxes = []
 
 # METHODS
 class HoverButton(tk.Button):
@@ -95,15 +99,22 @@ def destroy_info():
     global searchCanvas
     global searchListBox
     global newStdInput
+    global checkBoxes
+    global cartCheckBoxes
     numInfo.destroy()
     idInfo.destroy()
     wordInfo.destroy()
+    countInfo.destroy()
     gameDescInfo.destroy()
     gameDescTxt.delete('1.0', tk.END)
     searchInput.delete(0, 'end')
-    newStdInput.delete(0, tk.END) #deletes the current value
-    deselect_all_search()
-    deselect_all_cart()
+    newStdInput.delete(0, tk.END) #deletes the current value   
+    if cartCheckBoxes:
+        deselect_all_search()
+        deselect_all_cart()
+        select_all_cart()
+        remove_from_cart()
+        update_cart()
 
 def update_info():
     global numInfo
@@ -113,6 +124,7 @@ def update_info():
     global gameDescTxt
     global searchInput
     global newStdInput
+    global countInfo
     numInfo = Label(frame1, text=df.iloc[currentRow].game_num)
     numInfo.place(x=10, y=35)
     numInfo.configure(background = "black", foreground="white")
@@ -122,12 +134,17 @@ def update_info():
     wordInfo = Label(frame1, text=df.iloc[currentRow].changed_word)
     wordInfo.place(x=200, y=35)
     wordInfo.configure(background = "black", foreground="white")
+
+    countInfo = Label(frame1, text=df.iloc[currentRow].occurances)
+    countInfo.place(x=200, y=125)
+    countInfo.configure(background = "black", foreground="white")
+
     gameDescInfo = Label(frame1, text=df.iloc[currentRow].game_name)
     gameDescInfo.place(x=10, y=130)
     gameDescInfo.configure(background = "black", foreground="white")
     gameDescTxt.insert(1.0, "{}".format(df.iloc[currentRow].game_description))
-    searchInput.insert(0, df.iloc[currentRow].changed_word)
-    newStdInput.insert(0, df.iloc[currentRow].changed_word) #inserts new value assigned by 2nd parameter
+    searchInput.insert(0, df.iloc[currentRow].changed_word.split("_")[0])
+    newStdInput.insert(0, df.iloc[currentRow].changed_word.split("_")[0]) #inserts new value assigned by 2nd parameter
     highlight_word()
 
 def highlight_word():
@@ -254,6 +271,8 @@ def onselect(evt):
 
 def add_to_cart():
     global cartList
+    global cartCheckBoxes
+    global cartCheckBoxList
     finalValue = []
     for x in checkBoxList:
         finalValue.append(x.get())
@@ -355,7 +374,8 @@ def load_file():
                     "stemmed_word": str,
                     "changed_word": str, 
                     "remark": str, 
-                    "std_word": str})
+                    "std_word": str,
+                    "occurances": int})
 
     update_info()
     update_std_words()
@@ -412,12 +432,19 @@ wordTitle.configure(background = "black", foreground="white")
 wordInfo = Label(frame1, text="")
 wordInfo.place(x=200, y=35)
 wordInfo.configure(background = "black", foreground="white")
+
+countTitle = Label(frame1, text="Count:")
+countTitle.place(x=200, y=100)
+countTitle.configure(background = "black", foreground="white")
+countInfo = Label(frame1, text="")
+countInfo.place(x=200, y=125)
+countInfo.configure(background = "black", foreground="white")
+
 prevBtn= HoverButton(frame1, text="Previous", command=prev_row, padx=2, pady=2)
 prevBtn.place(x=10,y=65)
 prevBtn.configure(background = "black", foreground="white")
 nextBtn = HoverButton(frame1, text="Next", command=next_row, padx=2, pady=2)
 nextBtn.place(x=85,y=65)
-nextBtn.configure(background = "black", foreground="white")
 skipVar = IntVar()
 skipBtn = Checkbutton(frame1, text='', variable=skipVar, selectcolor="grey88", background='black')
 skipBtn.place(x=145,y=65)
@@ -434,15 +461,14 @@ gameDescTxt = st.ScrolledText(frame1, undo=True, width=40, height=50, wrap="word
 gameDescTxt.place(x=10, y=160)
 gameDescTxt.insert(1.0, "LOAD A FILE..")
 
+
 # FRAME 2
 searchBtn = HoverButton(frame2, text="Search", command=search_word, padx=2, pady=2)
 searchBtn.place(x=10,y=40)
-searchBtn.configure(background = "black", foreground="white")
 searchInput = Entry(frame2, width=32, justify = "left", font=('Consolas', 10, 'bold'))
 searchInput.place(x=75,y=42)
 addCartBtn = HoverButton(frame2, text="Add", command=add_to_cart, padx=2, pady=2)
 addCartBtn.place(x=10,y=120)
-addCartBtn.configure(background = "black", foreground="white")
 selectAllSearchBtn = HoverButton(frame2, text="Select All", command=select_all_search, padx=2, pady=2)
 selectAllSearchBtn.place(x=175,y=120)
 selectAllSearchBtn.configure(background = "black", foreground="white")
@@ -458,7 +484,6 @@ searchListBox.pack()
 # FRAME 3
 removeCartBtn = HoverButton(frame3, text="Remove", command=remove_from_cart, padx=2, pady=2)
 removeCartBtn.place(x=10,y=120)
-removeCartBtn.configure(background = "black", foreground="white")
 selectAllSearchBtn = HoverButton(frame3, text="Select All", command=select_all_cart, padx=2, pady=2)
 selectAllSearchBtn.place(x=175,y=120)
 selectAllSearchBtn.configure(background = "black", foreground="white")
@@ -474,13 +499,11 @@ cartListBox.pack()
 # FRAME 4
 newStdBtn = HoverButton(frame4, text="New", command=new_std_word, padx=2, pady=2)
 newStdBtn.place(x=10,y=40)
-newStdBtn.configure(background = "black", foreground="white")
 newStdInput = Entry(frame4, width=36, justify = "left", font=('Consolas', 10, 'bold'))
 newStdInput.place(x=75,y=42)
 
 stdSetBtn = HoverButton(frame4, text="Existing", command=set_std, padx=2, pady=2)
 stdSetBtn.place(x=10, y=80)
-stdSetBtn.configure(background = "black", foreground="white")
 
 stdCanvas = Canvas(frame4, bg='green', width=340, height=900)
 stdCanvas.place(x=10,y=160)
@@ -505,13 +528,11 @@ backMatchBox.place(x=5,y=5)
 
 loadFileBtn = HoverButton(frame5, text="Load", command=load_file, padx=2, pady=2)
 loadFileBtn.place(x=10,y=880)
-loadFileBtn.configure(background = "black", foreground="white")
 loadFileInput = Entry(frame5, width=28, justify = "left", font=('Consolas', 10, 'bold'))
 loadFileInput.place(x=75,y=880)
 
 saveFileBtn = HoverButton(frame5, text="Save", command=save_file, padx=2, pady=2)
 saveFileBtn.place(x=10,y=920)
-saveFileBtn.configure(background = "black", foreground="white")
 saveFileInput = Entry(frame5, width=32, justify = "left", font=('Consolas', 10, 'bold'))
 saveFileInput.place(x=75,y=920)
 
