@@ -3,6 +3,7 @@ import pandas as pd
 import tkinter as tk
 import tkinter.scrolledtext as st
 from tkinter import IntVar, Tk, Frame, Label, LabelFrame, Button, Checkbutton, Entry, Canvas, Scrollbar, Text, ttk, Listbox
+import csv
 
 # SET UP WINDOW
 root = Tk()
@@ -31,6 +32,8 @@ global cartCanvas
 global cartListBox
 global cartCheckBoxes
 cartCheckBoxes = []
+global change_array
+change_array = []
 
 # METHODS
 class HoverButton(tk.Button):
@@ -321,21 +324,31 @@ def update_std_words():
         stdListBox.insert(tk.END, item)
     data_output()
 
-def set_std():   
+def set_std():  
+    global change_array 
+    change_array = []
     newStdWord = stdListBox.get(tk.ACTIVE)
     for cartWord in sorted(cartList):
         # df['std_word'][df['changed_word'].str.match(cartWord)] = newStdWord
-        df['std_word'][df['changed_word'] == cartWord] = newStdWord
+        df.loc[df['changed_word'] == cartWord, 'std_word'] = newStdWord
+        # update changelog
+        change_row = [newStdWord, cartWord]
+        change_array.append(change_row)
     update_std_words()
     select_all_cart()
     remove_from_cart()
     update_cart()
-
+    
 def new_std_word():
+    global change_array
+    change_array = []
     newStdWord = newStdInput.get()
     for cartWord in cartList:
         # df['std_word'][df['changed_word'].str.match(cartWord)] = newStdWord
-        df['std_word'][df['changed_word'] == cartWord] = newStdWord
+        df.loc[df['changed_word'] == cartWord, 'std_word'] = newStdWord
+        # update changelog
+        change_row = [newStdWord, cartWord]
+        change_array.append(change_row)
     update_std_words()
     select_all_cart()
     remove_from_cart()
@@ -360,6 +373,13 @@ def deselect_all_cart():
 def data_output():
     df.to_csv('data_output.csv', index=True, index_label="index")
 
+    with open('changelog.csv', 'a') as outcsv:   
+        #configure writer to write standard csv file
+        writer = csv.writer(outcsv, lineterminator='\n')
+        for item in change_array:
+            #Write item to outcsv
+            writer.writerow([item[0], item[1]])
+
 def save_file():
     df.to_csv('{}.csv'.format(saveFileInput.get()), index=True, index_label="index")
 
@@ -375,8 +395,7 @@ def load_file():
                     "changed_word": str, 
                     "remark": str, 
                     "std_word": str,
-                    "occurances": int})
-
+                    "occurances": int})              
     update_info()
     update_std_words()
 
