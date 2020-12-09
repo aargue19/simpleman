@@ -3,7 +3,11 @@ import pandas as pd
 import tkinter as tk
 import tkinter.scrolledtext as st
 from tkinter import IntVar, Tk, Frame, Label, LabelFrame, Button, Checkbutton, Entry, Canvas, Scrollbar, Text, ttk, Listbox
-import csv
+
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
 
 # SET UP WINDOW
 root = Tk()
@@ -51,7 +55,6 @@ class HoverButton(tk.Button):
         self['background'] = self.defaultBackground
 
 # FUNCTIONS
-
 def prev_row():
     global currentRow
     keepSkipping = True
@@ -262,12 +265,10 @@ def onselect(evt):
     w = evt.widget
     index = int(w.curselection()[0])
     value = w.get(index)
-    print('You selected item %d: "%s"' % (index, value))
     associated_words_df = df['changed_word'][df['std_word'] == '%s' % (value)].unique()
     associated_words = []
     for i in range(len(associated_words_df)):
         associated_words.append(associated_words_df[i])
-    print(associated_words)
     backMatchBox.delete('1.0', tk.END)
     for i in range(len(associated_words)):
         backMatchBox.insert(1.0, "%s \n" % (associated_words[i]))
@@ -320,8 +321,14 @@ def remove_from_cart():
 def update_std_words():
     stdListBox.delete(0, tk.END)
     bwList = df['std_word'][df['std_word'] != "nan"].tolist()
-    for item in sorted(list(set(bwList))):
-        stdListBox.insert(tk.END, item)
+    filterTerm = stdSearchInput.get()
+    if filterTerm == "":
+        for item in sorted(list(set(bwList))):
+            stdListBox.insert(tk.END, item)   
+    else:
+        for item in sorted(list(set(bwList))):
+            if filterTerm in item:
+                stdListBox.insert(tk.END, item)     
     data_output()
 
 def set_std():  
@@ -397,6 +404,12 @@ def load_file():
                     "std_word": str,
                     "occurances": int})              
     update_info()
+    update_std_words()
+
+def std_search():
+    global filterTerm
+    filterTerm = stdSearchInput.get()
+    print("Filter term: %s" % filterTerm)
     update_std_words()
 
 ##################################################################################################################
@@ -537,6 +550,11 @@ stdScrollbar.config(command=stdListBox.yview)
 
 #bind event to std listbox so words show in frame 5
 stdListBox.bind('<<ListboxSelect>>', onselect)
+
+stdSearchBtn = HoverButton(frame4, text="Search", command=std_search, padx=2, pady=2)
+stdSearchInput = Entry(frame4, width=36, justify = "left", font=('Consolas', 10, 'bold'))
+stdSearchBtn.place(x=10, y=120)
+stdSearchInput.place(x=80, y=120)
 
 #FRAME 5
 backMatchCanvas = LabelFrame(frame5, text='Words already standardized w/ selected', bg='grey88', width=350, height=835)
