@@ -72,7 +72,6 @@ def prev_row():
     destroy_info()
     update_info()
     update_std_words()
-    search_word()
 
 def next_row():
     global currentRow
@@ -91,7 +90,7 @@ def next_row():
     destroy_info()
     update_info()
     update_std_words()
-    search_word()
+    
 
 def destroy_info():
     global numInfo
@@ -121,6 +120,9 @@ def destroy_info():
         select_all_cart()
         remove_from_cart()
         update_cart()
+    
+    searchCanvas.destroy()
+    searchListBox.destroy()
 
 def update_info():
     global numInfo
@@ -152,6 +154,7 @@ def update_info():
     searchInput.insert(0, df.iloc[currentRow].changed_word.split("_")[0])
     newStdInput.insert(0, df.iloc[currentRow].changed_word.split("_")[0]) #inserts new value assigned by 2nd parameter
     highlight_word()
+    search_word()
 
 def highlight_word():
     global start_pos
@@ -185,7 +188,7 @@ def search_word():
     search_term = searchInput.get()
     searchCanvas = Canvas(frame2, bg='black', width=420, height=800)
     searchCanvas.place(x=10,y=160)
-    searchListBox = st.ScrolledText(searchCanvas, width=40, height=50, wrap="none")
+    searchListBox = st.ScrolledText(searchCanvas, width=52, height=50, wrap="none")
     searchListBox.configure(background = "black")
     searchListBox.pack() 
     wantSkip = skipVar.get()
