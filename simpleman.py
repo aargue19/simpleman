@@ -412,6 +412,16 @@ def std_search():
     print("Filter term: %s" % filterTerm)
     update_std_words()
 
+def back_search():
+    value = backSearchInput.get()
+    associated_words_df = df['std_word'][df['changed_word'].str.contains(value)].unique()
+    associated_words = []
+    for i in range(len(associated_words_df)):
+        associated_words.append(associated_words_df[i])
+    backMatchBox.delete('1.0', tk.END)
+    for i in range(len(associated_words)):
+        backMatchBox.insert(1.0, "%s \n" % (associated_words[i]))
+
 ##################################################################################################################
 ##################################################################################################################
 ##################################################################################################################
@@ -423,7 +433,7 @@ def std_search():
 ##################################################################################################################
 
 # SET WINDOW SIZE
-rootWidth = 1800
+rootWidth = 1900
 rootHeight = 1000
 root.geometry('{}x{}+25+25'.format(rootWidth, rootHeight))
 root.resizable(width=False, height=False)
@@ -432,17 +442,17 @@ root.resizable(width=False, height=False)
 frame1 = Frame(root, width=360, height=1000)
 frame1.place(x=0,y=0)
 frame1.config(bg="grey11")
-frame2 = Frame(root, width=360, height=1000)
+frame2 = Frame(root, width=460, height=1000)
 frame2.place(x=360,y=0)
 frame2.config(bg="grey22")
 frame3 = Frame(root, width=360, height=1000)
-frame3.place(x=720,y=0)
+frame3.place(x=820,y=0)
 frame3.config(bg="grey44")
 frame4 = Frame(root, width=360, height=1000)
-frame4.place(x=1080,y=0)
+frame4.place(x=1180,y=0)
 frame4.config(bg="grey66")
 frame5 = Frame(root, width=360, height=1000)
-frame5.place(x=1440,y=0)
+frame5.place(x=1540,y=0)
 frame5.config(bg="grey88")
 
 # FRAME 1
@@ -507,9 +517,9 @@ selectAllSearchBtn.configure(background = "black", foreground="white")
 deselectAllSearchBtn = HoverButton(frame2, text="Deselect All", command=deselect_all_search, padx=2, pady=2)
 deselectAllSearchBtn.place(x=250,y=120)
 deselectAllSearchBtn.configure(background = "black", foreground="white")
-searchCanvas = Canvas(frame2, bg='black', width=340, height=800)
+searchCanvas = Canvas(frame2, bg='black', width=440, height=800)
 searchCanvas.place(x=10,y=160)
-searchListBox = st.ScrolledText(searchCanvas, width=40, height=50, wrap="none")
+searchListBox = st.ScrolledText(searchCanvas, width=52, height=50, wrap="none")
 searchListBox.configure(background = "black")
 searchListBox.pack() 
 
@@ -557,21 +567,26 @@ stdSearchBtn.place(x=10, y=120)
 stdSearchInput.place(x=80, y=120)
 
 #FRAME 5
-backMatchCanvas = LabelFrame(frame5, text='Words already standardized w/ selected', bg='grey88', width=350, height=835)
-backMatchCanvas.place(x=5,y=25)
-backMatchBox = st.ScrolledText(backMatchCanvas, width=38, height=50, wrap="none")
+backSearchBtn = HoverButton(frame5, text="Search", command=back_search, padx=2, pady=2)
+backSearchInput = Entry(frame5, width=36, justify = "left", font=('Consolas', 10, 'bold'))
+backSearchBtn.place(x=10, y=25)
+backSearchInput.place(x=80, y=25)
+
+backMatchCanvas = LabelFrame(frame5, text='Words already standardized w/ selected', bg='grey88', width=350, height=800)
+backMatchCanvas.place(x=5,y=95)
+backMatchBox = st.ScrolledText(backMatchCanvas, width=44, height=50, wrap="none")
 backMatchBox.configure(background = "black", foreground="white", font=('Consolas', 10, 'bold'))
 backMatchBox.place(x=5,y=5)
 
 loadFileBtn = HoverButton(frame5, text="Load", command=load_file, padx=2, pady=2)
-loadFileBtn.place(x=10,y=880)
-loadFileInput = Entry(frame5, width=28, justify = "left", font=('Consolas', 10, 'bold'))
-loadFileInput.place(x=75,y=880)
+loadFileBtn.place(x=10,y=910)
+loadFileInput = Entry(frame5, width=32, justify = "left", font=('Consolas', 10, 'bold'))
+loadFileInput.place(x=75,y=910)
 
 saveFileBtn = HoverButton(frame5, text="Save", command=save_file, padx=2, pady=2)
-saveFileBtn.place(x=10,y=920)
+saveFileBtn.place(x=10,y=950)
 saveFileInput = Entry(frame5, width=32, justify = "left", font=('Consolas', 10, 'bold'))
-saveFileInput.place(x=75,y=920)
+saveFileInput.place(x=75,y=950)
 
 # MAIN LOOP
 root.mainloop()
