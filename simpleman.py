@@ -3,6 +3,7 @@ import pandas as pd
 import tkinter as tk
 import tkinter.scrolledtext as st
 from tkinter import IntVar, Tk, Frame, Label, LabelFrame, Button, Checkbutton, Entry, Canvas, Scrollbar, Text, ttk, Listbox
+import csv
 
 ##################################################################################################################
 ##################################################################################################################
@@ -332,7 +333,6 @@ def update_std_words():
         for item in sorted(list(set(bwList))):
             if filterTerm in item:
                 stdListBox.insert(tk.END, item)     
-    data_output()
 
 def set_std():  
     global change_array 
@@ -348,6 +348,7 @@ def set_std():
     select_all_cart()
     remove_from_cart()
     update_cart()
+    data_output()
     
 def new_std_word():
     global change_array
@@ -363,6 +364,7 @@ def new_std_word():
     select_all_cart()
     remove_from_cart()
     update_cart()
+    data_output()
 
 def select_all_search():
     for x in checkBoxes:
@@ -424,6 +426,22 @@ def back_search():
     backMatchBox.delete('1.0', tk.END)
     for i in range(len(associated_words)):
         backMatchBox.insert(1.0, "%s \n" % (associated_words[i]))
+
+def filter_std_alpha(letter):
+    letter = letter.lower()
+    print(letter)
+    bwList = df['std_word'][df['std_word'] != "nan"].tolist()
+    bwList = set(bwList)
+    print(bwList)
+    stdListBox.delete(0, tk.END)
+
+    for item in bwList:
+        print(item)
+        print(item[0])
+
+        if item[0] == letter:
+            
+            stdListBox.insert(tk.END, item)     
 
 ##################################################################################################################
 ##################################################################################################################
@@ -543,15 +561,35 @@ cartListBox.pack()
 
 # FRAME 4
 newStdBtn = HoverButton(frame4, text="New", command=new_std_word, padx=2, pady=2)
-newStdBtn.place(x=10,y=40)
+newStdBtn.place(x=10,y=10)
 newStdInput = Entry(frame4, width=36, justify = "left", font=('Consolas', 10, 'bold'))
-newStdInput.place(x=75,y=42)
+newStdInput.place(x=75,y=12)
 
 stdSetBtn = HoverButton(frame4, text="Existing", command=set_std, padx=2, pady=2)
-stdSetBtn.place(x=10, y=80)
+stdSetBtn.place(x=10, y=50)
+
+stdSearchBtn = HoverButton(frame4, text="Search", command=std_search, padx=2, pady=2)
+stdSearchInput = Entry(frame4, width=36, justify = "left", font=('Consolas', 10, 'bold'))
+stdSearchBtn.place(x=10, y=90)
+stdSearchInput.place(x=80, y=90)
+
+buttons = []
+xcoord = 10
+ycoord = 140
+letters = ["A","B","C","D","E","F","G","H","I","J","K","L","M",
+"N","O","P","Q","R","S","T","U","V","W","X","Y","Z",]
+
+for i in range(26):
+    xcoord +=20
+    b = HoverButton(frame4, width = 2, height=1, padx=0, pady=0, text = "%s" % (letters[i]), command=lambda i=i: filter_std_alpha(letters[i]))
+    if i <= 12:
+        b.place(x=xcoord, y=ycoord)
+    else:
+        b.place(x=xcoord-260, y=ycoord+25)
+    buttons.append(b)
 
 stdCanvas = Canvas(frame4, bg='green', width=340, height=900)
-stdCanvas.place(x=10,y=160)
+stdCanvas.place(x=10,y=190)
 
 stdScrollbar = Scrollbar(stdCanvas, orient="vertical")
 stdScrollbar.pack(side="right", fill="y")
@@ -564,10 +602,7 @@ stdScrollbar.config(command=stdListBox.yview)
 #bind event to std listbox so words show in frame 5
 stdListBox.bind('<<ListboxSelect>>', onselect)
 
-stdSearchBtn = HoverButton(frame4, text="Search", command=std_search, padx=2, pady=2)
-stdSearchInput = Entry(frame4, width=36, justify = "left", font=('Consolas', 10, 'bold'))
-stdSearchBtn.place(x=10, y=120)
-stdSearchInput.place(x=80, y=120)
+
 
 #FRAME 5
 backSearchBtn = HoverButton(frame5, text="Search", command=back_search, padx=2, pady=2)
