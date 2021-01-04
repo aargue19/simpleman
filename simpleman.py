@@ -227,9 +227,7 @@ def on_enter(event):
     global end_pos
     descriptions_list = []
     target = getattr(event.widget, "changed_word", "")
-    print(target)
     target_first_word =  target.split("_")[0]
-    print(target_first_word)
 
     # search_term = searchInput.get()
     search_term = target_first_word
@@ -414,7 +412,6 @@ def load_file():
 def std_search():
     global filterTerm
     filterTerm = stdSearchInput.get()
-    print("Filter term: %s" % filterTerm)
     update_std_words()
 
 def back_search():
@@ -424,23 +421,17 @@ def back_search():
     for i in range(len(associated_words_df)):
         associated_words.append(associated_words_df[i])
     backMatchBox.delete('1.0', tk.END)
-    for i in range(len(associated_words)):
-        backMatchBox.insert(1.0, "%s \n" % (associated_words[i]))
+    for i in reversed(sorted(associated_words)):
+        backMatchBox.insert(1.0, "%s \n" % (i))
 
 def filter_std_alpha(letter):
     letter = letter.lower()
-    print(letter)
     bwList = df['std_word'][df['std_word'] != "nan"].tolist()
-    bwList = set(bwList)
-    print(bwList)
+    bwList = sorted(set(bwList))
     stdListBox.delete(0, tk.END)
 
     for item in bwList:
-        print(item)
-        print(item[0])
-
-        if item[0] == letter:
-            
+        if item[0] == letter:          
             stdListBox.insert(tk.END, item)     
 
 ##################################################################################################################
