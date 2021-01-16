@@ -65,7 +65,7 @@ def prev_row():
     if wantSkip == 1:
         while keepSkipping == True:
             count += 1
-            if df.iloc[currentRow + count].std_word != "nan":
+            if df.iloc[currentRow - count].std_word != "nan":
                 skipNum+=1
             else:
                 keepSkipping = False
@@ -272,8 +272,10 @@ def onselect(evt):
     for i in range(len(associated_words_df)):
         associated_words.append(associated_words_df[i])
     backMatchBox.delete('1.0', tk.END)
-    for i in range(len(associated_words)):
-        backMatchBox.insert(1.0, "%s \n" % (associated_words[i]))
+    # for i in range(len(associated_words)):
+    #     backMatchBox.insert(1.0, "%s \n" % (associated_words[i]))
+    for i in reversed(sorted(list(set(associated_words)))):
+        backMatchBox.insert(1.0, "%s \n" % (i))
 
 def add_to_cart():
     global cartList
